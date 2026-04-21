@@ -1,0 +1,295 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VisaCaseStatus {
+  draft
+  waiting_documents
+  documents_uploaded
+  under_review
+  approved
+  rejected
+  contract_sent
+  completed
+}
+
+enum UploadedDocumentStatus {
+  pending
+  approved
+  rejected
+  reupload_requested
+}
+
+enum ContractStatus {
+  draft
+  generated
+  sent
+  accepted
+  declined
+}
+
+enum NotificationType {
+  document_uploaded
+  document_approved
+  document_rejected
+  reupload_requested
+  checklist_completed
+  contract_sent
+  contract_accepted
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  users           User[]
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  roleId         String
+  permissionId   String
+  createdAt      DateTime   @default(now())
+  role           Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission     Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model User {
+  id                 String             @id @default(cuid())
+  email              String             @unique
+  passwordHash       String
+  roleId             String
+  isActive           Boolean            @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  role               Role               @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  customerProfile    CustomerProfile?
+  agentProfile       AgentProfile?
+  adminProfile       AdminProfile?
+  refreshSessions    RefreshSession[]
+  uploadedDocuments  UploadedDocument[] @relation("UploadedByUser")
+  generatedContracts Contract[]         @relation("GeneratedByUser")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+}
+
+model CustomerProfile {
+  id                  String     @id @default(cuid())
+  userId              String     @unique
+  firstName           String
+  lastName            String
+  dateOfBirth         DateTime?
+  nationality         String?
+  passportNumber      String?
+  passportExpiryDate  DateTime?
+  phone               String?
+  addressLine1        String?
+  addressLine2        String?
+  city                String?
+  state               String?
+  postcode            String?
+  country             String?
+  acceptPolicy        Boolean    @default(false)
+  acceptedPolicyAt    DateTime?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visaCases           VisaCase[]
+}
+
+model AgentProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  firstName          String
+  lastName           String
+  phone              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedVisaCases  VisaCase[]
+  reviewedDocuments  UploadedDocument[] @relation("ReviewedByAgent")
+}
+
+model AdminProfile {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  firstName          String
+  lastName           String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshSession {
+  id                String   @id @default(cuid())
+  userId            String
+  refreshTokenHash  String
+  userAgent         String?
+  ipAddress         String?
+  expiresAt         DateTime
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VisaType {
+  id                           String                     @id @default(cuid())
+  code                         String                     @unique
+  name                         String
+  description                  String?
+  isActive                     Boolean                    @default(true)
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
+  visaCases                    VisaCase[]
+  requiredDocumentMappings     VisaTypeRequiredDocument[]
+}
+
+model DocumentType {
+  id                           String                     @id @default(cuid())
+  code                         String                     @unique
+  name                         String
+  description                  String?
+  allowedExtensions            String[]
+  maxFileSizeMb                Int
+  createdAt                    DateTime                   @default(now())
+  updatedAt                    DateTime                   @updatedAt
+  visaTypeMappings             VisaTypeRequiredDocument[]
+  uploadedDocuments            UploadedDocument[]
+}
+
+model VisaTypeRequiredDocument {
+  id               String       @id @default(cuid())
+  visaTypeId       String
+  documentTypeId   String
+  isRequired       Boolean      @default(true)
+  sortOrder        Int          @default(0)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  visaType         VisaType     @relation(fields: [visaTypeId], references: [id], onDelete: Cascade)
+  documentType     DocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([visaTypeId, documentTypeId])
+  @@index([visaTypeId, sortOrder])
+}
+
+model VisaCase {
+  id                  String             @id @default(cuid())
+  caseNumber          String             @unique
+  visaTypeId          String
+  customerProfileId   String
+  agentProfileId      String?
+  status              VisaCaseStatus     @default(draft)
+  submittedAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  visaType            VisaType           @relation(fields: [visaTypeId], references: [id], onDelete: Restrict)
+  customerProfile     CustomerProfile    @relation(fields: [customerProfileId], references: [id], onDelete: Restrict)
+  agentProfile        AgentProfile?      @relation(fields: [agentProfileId], references: [id], onDelete: SetNull)
+  uploadedDocuments   UploadedDocument[]
+  contracts           Contract[]
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+}
+
+model UploadedDocument {
+  id                 String                  @id @default(cuid())
+  visaCaseId         String
+  documentTypeId     String
+  uploadedByUserId   String
+  originalFileName   String
+  storedFileName     String
+  fileUrl            String
+  mimeType           String
+  fileSizeBytes      Int
+  versionNumber      Int
+  status             UploadedDocumentStatus @default(pending)
+  uploadedAt         DateTime                @default(now())
+  reviewedByAgentId  String?
+  reviewedAt         DateTime?
+  reviewNotes        String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  visaCase           VisaCase                @relation(fields: [visaCaseId], references: [id], onDelete: Cascade)
+  documentType       DocumentType            @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  uploadedByUser     User                    @relation("UploadedByUser", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+  reviewedByAgent    AgentProfile?           @relation("ReviewedByAgent", fields: [reviewedByAgentId], references: [id], onDelete: SetNull)
+
+  @@index([visaCaseId, documentTypeId])
+  @@unique([visaCaseId, documentTypeId, versionNumber])
+}
+
+model ContractTemplate {
+  id              String     @id @default(cuid())
+  name            String
+  version         String
+  body            String
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  contracts       Contract[]
+
+  @@unique([name, version])
+}
+
+model Contract {
+  id                  String         @id @default(cuid())
+  visaCaseId          String
+  contractTemplateId  String
+  generatedByUserId   String
+  generatedFileUrl    String
+  status              ContractStatus @default(draft)
+  sentAt              DateTime?
+  acceptedAt          DateTime?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  visaCase            VisaCase       @relation(fields: [visaCaseId], references: [id], onDelete: Cascade)
+  contractTemplate    ContractTemplate @relation(fields: [contractTemplateId], references: [id], onDelete: Restrict)
+  generatedByUser     User           @relation("GeneratedByUser", fields: [generatedByUserId], references: [id], onDelete: Restrict)
+}
+
+model Notification {
+  id               String           @id @default(cuid())
+  userId           String
+  visaCaseId       String?
+  type             NotificationType
+  title            String
+  message          String
+  isRead           Boolean          @default(false)
+  readAt           DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visaCase         VisaCase?        @relation(fields: [visaCaseId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id              String   @id @default(cuid())
+  actorUserId     String?
+  visaCaseId      String?
+  action          String
+  entityType      String
+  entityId        String
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  actorUser       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  visaCase        VisaCase? @relation(fields: [visaCaseId], references: [id], onDelete: Cascade)
+}
