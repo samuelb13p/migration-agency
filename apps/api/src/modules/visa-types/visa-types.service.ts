@@ -1,3 +1,4 @@
+import { HttpError } from "../../common/http-error";
 import { prisma } from "../../lib/prisma";
 
 export const visaTypesService = {
@@ -11,6 +12,24 @@ export const visaTypesService = {
       },
       orderBy: { name: "asc" },
     });
+  },
+
+  async getById(id: string) {
+    const record = await prisma.visaType.findUnique({
+      where: { id },
+      include: {
+        requiredDocumentMappings: {
+          include: { documentType: true },
+          orderBy: { sortOrder: "asc" },
+        },
+      },
+    });
+
+    if (!record) {
+      throw new HttpError(404, "Visa type not found.");
+    }
+
+    return record;
   },
 
   createVisaType(input: { code: string; name: string; description?: string; isActive?: boolean }) {

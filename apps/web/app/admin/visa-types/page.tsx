@@ -1,5 +1,5 @@
 import { DashboardShell } from "../../../components/dashboard/shell";
-import { LiveAdminVisaTypes } from "../../../components/dashboard/live-admin-visa-types";
+import { LiveAdminVisaTypes } from "../../../components/admin/live-admin-visa-types";
 import { adminLinks } from "../../../lib/admin-nav";
 
 export default function AdminVisaTypesPage() {
