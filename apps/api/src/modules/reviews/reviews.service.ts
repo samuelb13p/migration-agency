@@ -1,9 +1,10 @@
-import { NotificationType, RoleName, UploadedDocumentStatus, VisaCaseStatus } from "@migration-agency/shared";
+import { NotificationType, RoleName, UploadedDocumentStatus } from "@migration-agency/shared";
 import type { AuthenticatedUser } from "../../common/types/auth";
 import { HttpError } from "../../common/http-error";
 import { prisma } from "../../lib/prisma";
 import { writeAuditLog } from "../audit/audit.service";
 import { ensureCaseAccess } from "../cases/cases.access";
+import { evaluateCaseCompleteness } from "../completeness/completeness.service";
 import { notificationsService } from "../notifications/notifications.service";
 
 export const reviewsService = {
@@ -43,20 +44,6 @@ export const reviewsService = {
       },
     });
 
-    if ([UploadedDocumentStatus.REJECTED, UploadedDocumentStatus.REUPLOAD_REQUESTED].includes(input.status)) {
-      await prisma.visaCase.update({
-        where: { id: upload.visaCaseId },
-        data: { status: VisaCaseStatus.REJECTED },
-      });
-    }
-
-    if (input.status === UploadedDocumentStatus.APPROVED) {
-      await prisma.visaCase.update({
-        where: { id: upload.visaCaseId },
-        data: { status: VisaCaseStatus.UNDER_REVIEW },
-      });
-    }
-
     const notificationType =
       input.status === UploadedDocumentStatus.APPROVED
         ? NotificationType.DOCUMENT_APPROVED
@@ -86,6 +73,8 @@ export const reviewsService = {
       entityId: uploadId,
       metadata: input,
     });
+
+    await evaluateCaseCompleteness(upload.visaCaseId);
 
     return review;
   },

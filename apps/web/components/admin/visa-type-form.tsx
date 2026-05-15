@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetchWithToken } from "../../lib/api";
 import { getAccessToken } from "../../lib/auth";
 import { Card } from "../ui/card";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 type DocumentTypeRecord = {
   id: string;
@@ -228,7 +229,10 @@ export function VisaTypeForm({ mode, visaTypeId }: { mode: "create" | "edit"; vi
           </label>
           <div className="flex flex-wrap gap-3 md:col-span-2">
             <button className="rounded-2xl bg-accent px-4 py-3 font-semibold text-white" disabled={isPending}>
-              {isPending ? "Saving..." : "Save"}
+              <span className="inline-flex items-center justify-center gap-2">
+                {isPending ? <LoadingSpinner label="Saving visa type" /> : null}
+                <span>{isPending ? "Saving..." : "Save"}</span>
+              </span>
             </button>
             <button className="rounded-2xl border border-slate-200 px-4 py-3 font-semibold" onClick={() => router.push("/admin/visa-types")} type="button">
               Cancel
@@ -288,7 +292,10 @@ export function VisaTypeForm({ mode, visaTypeId }: { mode: "create" | "edit"; vi
               </div>
             </div>
             <button className="rounded-2xl bg-accent px-4 py-3 font-semibold text-white md:col-span-3 md:justify-self-start" disabled={isPending}>
-              {isPending ? "Saving..." : "Add selected documents"}
+              <span className="inline-flex items-center justify-center gap-2">
+                {isPending ? <LoadingSpinner label="Adding required documents" /> : null}
+                <span>{isPending ? "Saving..." : "Add selected documents"}</span>
+              </span>
             </button>
           </form>
 

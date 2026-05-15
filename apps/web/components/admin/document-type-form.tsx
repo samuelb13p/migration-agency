@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetchWithToken } from "../../lib/api";
 import { getAccessToken } from "../../lib/auth";
 import { Card } from "../ui/card";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 type DocumentTypeRecord = {
   id: string;
@@ -116,7 +117,10 @@ export function DocumentTypeForm({ mode, documentTypeId }: { mode: "create" | "e
         />
         <div className="flex flex-wrap gap-3 md:col-span-2">
           <button className="rounded-2xl bg-accent px-4 py-3 font-semibold text-white" disabled={isPending}>
-            {isPending ? "Saving..." : "Save"}
+            <span className="inline-flex items-center justify-center gap-2">
+              {isPending ? <LoadingSpinner label="Saving document type" /> : null}
+              <span>{isPending ? "Saving..." : "Save"}</span>
+            </span>
           </button>
           <button className="rounded-2xl border border-slate-200 px-4 py-3 font-semibold" onClick={() => router.push("/admin/document-types")} type="button">
             Cancel

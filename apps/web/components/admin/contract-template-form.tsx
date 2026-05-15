@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiFetchWithToken } from "../../lib/api";
 import { getAccessToken } from "../../lib/auth";
 import { Card } from "../ui/card";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 type ContractTemplateRecord = {
   id: string;
@@ -104,7 +105,10 @@ export function ContractTemplateForm({ mode, templateId }: { mode: "create" | "e
         </label>
         <div className="flex flex-wrap gap-3">
           <button className="rounded-2xl bg-accent px-4 py-3 font-semibold text-white" disabled={isPending}>
-            {isPending ? "Saving..." : "Save"}
+            <span className="inline-flex items-center justify-center gap-2">
+              {isPending ? <LoadingSpinner label="Saving contract template" /> : null}
+              <span>{isPending ? "Saving..." : "Save"}</span>
+            </span>
           </button>
           <button className="rounded-2xl border border-slate-200 px-4 py-3 font-semibold" onClick={() => router.push("/admin/contract-templates")} type="button">
             Cancel

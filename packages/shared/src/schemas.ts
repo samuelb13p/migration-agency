@@ -110,6 +110,19 @@ export const createVisaCaseSchema = z.object({
   agentProfileId: z.string().optional(),
 });
 
+export const createAgentVisaCaseSchema = z.object({
+  caseNumber: z.string().min(3).max(60),
+  visaTypeId: z.string().min(1),
+  contractTemplateId: z.string().min(1),
+  status: z.nativeEnum(VisaCaseStatus).default(VisaCaseStatus.WAITING_DOCUMENTS),
+  customer: z.object({
+    firstName: z.string().min(2).max(80),
+    lastName: z.string().min(2).max(80),
+    email: z.string().email(),
+    passportNumber: z.string().min(4).max(40),
+  }),
+});
+
 export const updateVisaCaseSchema = z.object({
   status: z.nativeEnum(VisaCaseStatus).optional(),
   agentProfileId: z.string().nullable().optional(),
@@ -136,6 +149,10 @@ export const updateContractSchema = z.object({
   status: z.nativeEnum(ContractStatus).optional(),
   sentAt: z.string().datetime().optional(),
   acceptedAt: z.string().datetime().optional(),
+});
+
+export const acceptContractSchema = z.object({
+  accepted: z.literal(true),
 });
 
 export const markNotificationReadSchema = z.object({

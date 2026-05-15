@@ -94,7 +94,7 @@ Backend default URL: [http://localhost:4000](http://localhost:4000)
 - The backend domain structure, schema, routes, and core workflow scaffolding are implemented.
 - The frontend is currently a professional scaffold with representative dashboard pages and sample data-driven layouts.
 - Storage is implemented with a local private driver for development and is intentionally abstracted for later S3-compatible replacement.
-- Email delivery is represented through an email-ready notification abstraction and is not connected to a live SMTP provider.
+- Email delivery uses Nodemailer. If SMTP is configured, customer access emails can be sent for agent-created visa cases. Without SMTP, the API falls back to a safe development transport.
 - Government or third-party migration integrations are intentionally out of scope.
 
 ## Recommended next steps

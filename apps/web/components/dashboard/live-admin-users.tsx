@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { apiFetchWithToken } from "../../lib/api";
 import { getAccessToken, getSessionUser } from "../../lib/auth";
 import { Card } from "../ui/card";
+import { LoadingSpinner } from "../ui/loading-spinner";
 
 type AdminUserRecord = {
   id: string;
@@ -27,6 +28,7 @@ export function LiveAdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [pendingActionKey, setPendingActionKey] = useState<string | null>(null);
   const currentUser = getSessionUser();
 
   async function load() {
@@ -52,6 +54,7 @@ export function LiveAdminUsers() {
     const token = getAccessToken();
     if (!token) return;
     clearFeedback();
+    setPendingActionKey(`status:${userId}`);
 
     startTransition(() => {
       void apiFetchWithToken(`/api/admin/users/${userId}/status`, token, {
@@ -64,6 +67,9 @@ export function LiveAdminUsers() {
         })
         .catch((updateError) => {
           setError(updateError instanceof Error ? updateError.message : "Unable to update user status.");
+        })
+        .finally(() => {
+          setPendingActionKey(null);
         });
     });
   }
@@ -72,6 +78,7 @@ export function LiveAdminUsers() {
     const token = getAccessToken();
     if (!token) return;
     clearFeedback();
+    setPendingActionKey(`delete:${userId}`);
 
     startTransition(() => {
       void apiFetchWithToken(`/api/admin/users/${userId}`, token, {
@@ -83,6 +90,9 @@ export function LiveAdminUsers() {
         })
         .catch((deleteError) => {
           setError(deleteError instanceof Error ? deleteError.message : "Unable to delete user.");
+        })
+        .finally(() => {
+          setPendingActionKey(null);
         });
     });
   }
@@ -134,7 +144,10 @@ export function LiveAdminUsers() {
                       onClick={() => handleStatusChange(user.id, !user.isActive)}
                       type="button"
                     >
-                      {user.isActive ? "Deactivate" : "Activate"}
+                      <span className="inline-flex items-center gap-2">
+                        {pendingActionKey === `status:${user.id}` ? <LoadingSpinner label="Updating user status" /> : null}
+                        <span>{pendingActionKey === `status:${user.id}` ? "Updating..." : user.isActive ? "Deactivate" : "Activate"}</span>
+                      </span>
                     </button>
                     <button
                       className="rounded-2xl border border-rose-200 px-3 py-2 font-semibold text-rose-700"
@@ -142,7 +155,10 @@ export function LiveAdminUsers() {
                       onClick={() => handleDelete(user.id)}
                       type="button"
                     >
-                      Delete
+                      <span className="inline-flex items-center gap-2">
+                        {pendingActionKey === `delete:${user.id}` ? <LoadingSpinner label="Deleting user" /> : null}
+                        <span>{pendingActionKey === `delete:${user.id}` ? "Deleting..." : "Delete"}</span>
+                      </span>
                     </button>
                   </div>
                 </td>

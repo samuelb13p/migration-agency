@@ -64,11 +64,12 @@ export function LiveVisaCaseChecklist({ caseId }: { caseId: string }) {
         </p>
       </Card>
       <ChecklistTable
+        caseId={caseId}
         items={record.items.map((item) => ({
           id: item.requiredDocumentId,
           name: item.name,
           status: item.status,
-          reviewStatus: item.status === "present" ? "pending" : item.status,
+          reviewStatus: item.status,
         }))}
       />
     </div>

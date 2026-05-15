@@ -34,11 +34,11 @@ export function createApp() {
   app.use("/api/profile", profileRouter);
   app.use("/api/visa-types", visaTypesRouter);
   app.use("/api/required-documents", requiredDocumentsRouter);
+  app.use("/api", contractsRouter);
   app.use("/api", casesRouter);
   app.use("/api", uploadsRouter);
   app.use("/api", reviewsRouter);
   app.use("/api/notifications", notificationsRouter);
-  app.use("/api", contractsRouter);
   app.use(errorHandler);
 
   return app;

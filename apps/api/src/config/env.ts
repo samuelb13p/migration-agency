@@ -11,6 +11,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   API_URL: z.string().url().default("http://localhost:4000"),
+  AGENCY_NAME: z.string().default("Migration Agency"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   LOCAL_STORAGE_ROOT: z.string().default("./storage/private"),
   SIGNED_URL_SECRET: z.string().min(16),
@@ -20,6 +21,7 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().email().optional(),
 });
 
 export const env = envSchema.parse(process.env);
