@@ -1,5 +1,15 @@
+import type { Prisma } from "@prisma/client";
 import { UploadedDocumentStatus, VisaCaseStatus } from "@migration-agency/shared";
 import { prisma } from "../../lib/prisma";
+
+type RequiredDocumentMappingWithDocumentType = Prisma.VisaTypeRequiredDocumentGetPayload<{
+  include: { documentType: true };
+}>;
+
+type LatestUploadSummary = {
+  versionNumber: number;
+  status: UploadedDocumentStatus;
+};
 
 export async function evaluateCaseCompleteness(caseId: string) {
   const record = await prisma.visaCase.findUniqueOrThrow({
@@ -18,8 +28,8 @@ export async function evaluateCaseCompleteness(caseId: string) {
     },
   });
 
-  const required = record.visaType.requiredDocumentMappings;
-  const latestUploads = new Map<string, { versionNumber: number; status: UploadedDocumentStatus }>();
+  const required: RequiredDocumentMappingWithDocumentType[] = record.visaType.requiredDocumentMappings;
+  const latestUploads = new Map<string, LatestUploadSummary>();
 
   for (const upload of record.uploadedDocuments) {
     const current = latestUploads.get(upload.documentTypeId);
@@ -33,23 +43,29 @@ export async function evaluateCaseCompleteness(caseId: string) {
 
   const uploadedIds = new Set(latestUploads.keys());
   const missingRequiredDocumentIds = required
-    .filter((item) => !uploadedIds.has(item.documentTypeId))
-    .map((item) => item.documentTypeId);
+    .filter((item: RequiredDocumentMappingWithDocumentType) => !uploadedIds.has(item.documentTypeId))
+    .map((item: RequiredDocumentMappingWithDocumentType) => item.documentTypeId);
 
   const latestRequiredUploads = required
-    .map((item) => latestUploads.get(item.documentTypeId))
-    .filter((value): value is { versionNumber: number; status: UploadedDocumentStatus } => Boolean(value));
+    .map((item: RequiredDocumentMappingWithDocumentType) => latestUploads.get(item.documentTypeId))
+    .filter((value: LatestUploadSummary | undefined): value is LatestUploadSummary => Boolean(value));
 
   const hasMissing = missingRequiredDocumentIds.length > 0;
-  const hasRejected = latestRequiredUploads.some((upload) =>
+  const hasRejected = latestRequiredUploads.some((upload: LatestUploadSummary) =>
     [UploadedDocumentStatus.REJECTED, UploadedDocumentStatus.REUPLOAD_REQUESTED].includes(upload.status),
   );
   const approvedRequiredCount = required.filter(
-    (item) => latestUploads.get(item.documentTypeId)?.status === UploadedDocumentStatus.APPROVED,
+    (item: RequiredDocumentMappingWithDocumentType) =>
+      latestUploads.get(item.documentTypeId)?.status === UploadedDocumentStatus.APPROVED,
   ).length;
   const completenessPercent =
     required.length === 0 ? 100 : Math.round((approvedRequiredCount / required.length) * 100);
-  const allApproved = required.length > 0 && required.every((item) => latestUploads.get(item.documentTypeId)?.status === UploadedDocumentStatus.APPROVED);
+  const allApproved =
+    required.length > 0 &&
+    required.every(
+      (item: RequiredDocumentMappingWithDocumentType) =>
+        latestUploads.get(item.documentTypeId)?.status === UploadedDocumentStatus.APPROVED,
+    );
 
   const nextStatus = hasMissing
     ? VisaCaseStatus.WAITING_DOCUMENTS
@@ -71,7 +87,7 @@ export async function evaluateCaseCompleteness(caseId: string) {
     caseId,
     completenessPercent,
     missingRequiredDocumentIds,
-    items: required.map((item) => ({
+    items: required.map((item: RequiredDocumentMappingWithDocumentType) => ({
       requiredDocumentId: item.documentTypeId,
       name: item.documentType.name,
       isRequired: item.isRequired,
