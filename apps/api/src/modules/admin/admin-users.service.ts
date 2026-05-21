@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { RoleName } from "@migration-agency/shared";
 import { HttpError } from "../../common/http-error";
 import { hashPassword } from "../../lib/password";
@@ -19,9 +18,9 @@ const adminUserInclude = {
   customerProfile: true,
   agentProfile: true,
   adminProfile: true,
-} satisfies Prisma.UserInclude;
+} as const;
 
-async function getRoleByName(roleName: RoleName, tx: Prisma.TransactionClient) {
+async function getRoleByName(roleName: RoleName, tx: any) {
   const role = await tx.role.findUnique({ where: { name: roleName } });
   if (!role) {
     throw new HttpError(422, "Role does not exist.");
@@ -30,7 +29,7 @@ async function getRoleByName(roleName: RoleName, tx: Prisma.TransactionClient) {
   return role;
 }
 
-async function getManagedUserOrThrow(userId: string, tx: Prisma.TransactionClient | typeof prisma = prisma) {
+async function getManagedUserOrThrow(userId: string, tx: any = prisma) {
   const user = await tx.user.findUnique({
     where: { id: userId },
     include: {
@@ -83,7 +82,7 @@ function assertRoleTransitionAllowed(
 }
 
 async function syncProfiles(
-  tx: Prisma.TransactionClient,
+  tx: any,
   user: Awaited<ReturnType<typeof getManagedUserOrThrow>>,
   input: ManagedUserInput,
   roleName: RoleName,
@@ -164,7 +163,7 @@ async function syncProfiles(
 }
 
 async function createProfilesForNewUser(
-  tx: Prisma.TransactionClient,
+  tx: any,
   userId: string,
   input: Required<Pick<ManagedUserInput, "firstName" | "lastName">> & ManagedUserInput,
   roleName: RoleName,
@@ -229,7 +228,7 @@ export const adminUsersService = {
       throw new HttpError(409, "A user with this email already exists.");
     }
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       const role = await getRoleByName(input.roleName, tx);
       const user = await tx.user.create({
         data: {
@@ -250,7 +249,7 @@ export const adminUsersService = {
   },
 
   async update(userId: string, input: ManagedUserInput) {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       const user = await getManagedUserOrThrow(userId, tx);
       const nextRoleName = input.roleName ?? getCurrentRoleName(user);
 
@@ -310,7 +309,7 @@ export const adminUsersService = {
       throw new HttpError(409, "Cannot delete a user with uploaded documents or generated contracts.");
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.refreshSession.deleteMany({ where: { userId } });
       await tx.user.delete({ where: { id: userId } });
     });

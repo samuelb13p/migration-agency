@@ -1,10 +1,14 @@
-import type { Prisma } from "@prisma/client";
 import { UploadedDocumentStatus, VisaCaseStatus } from "@migration-agency/shared";
 import { prisma } from "../../lib/prisma";
 
-type RequiredDocumentMappingWithDocumentType = Prisma.VisaTypeRequiredDocumentGetPayload<{
-  include: { documentType: true };
-}>;
+type RequiredDocumentMappingWithDocumentType = {
+  documentTypeId: string;
+  isRequired: boolean;
+  sortOrder: number;
+  documentType: {
+    name: string;
+  };
+};
 
 type LatestUploadSummary = {
   versionNumber: number;

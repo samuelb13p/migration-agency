@@ -68,7 +68,7 @@ export const casesService = {
 
     const passwordHash = await hashPassword(normalizedPassportNumber);
 
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await prisma.$transaction(async (tx: any) => {
       const user = await tx.user.create({
         data: {
           email: normalizedEmail,

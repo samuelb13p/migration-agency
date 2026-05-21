@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import { HttpError } from "../../common/http-error";
 import { prisma } from "../../lib/prisma";
 
@@ -54,7 +53,7 @@ export const adminConfigService = {
       throw new HttpError(422, "One or more permissions do not exist.");
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       await tx.rolePermission.deleteMany({ where: { roleId } });
 
       if (permissionIds.length) {
