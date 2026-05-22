@@ -27,7 +27,7 @@ export const emailService = {
       <p><a href="${loginUrl}">Open the migration portal</a></p>
     `;    
 
-    return sendMail({
+    return await sendMail({
       to: input.email,
       subject,
       text,
