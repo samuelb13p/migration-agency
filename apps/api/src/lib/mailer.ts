@@ -9,6 +9,17 @@ type SendMailInput = {
 };
 
 function createTransport() {
+
+  console.log("createTransport");
+  console.log(
+    {
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      auth: env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
+    }
+  );
+  console.log("+++++++++++++++++++++++++");
+
   if (env.SMTP_HOST && env.SMTP_PORT) {
     return nodemailer.createTransport({
       host: env.SMTP_HOST,
@@ -16,6 +27,7 @@ function createTransport() {
       auth: env.SMTP_USER && env.SMTP_PASS ? { user: env.SMTP_USER, pass: env.SMTP_PASS } : undefined,
     });
   }
+  console.log("==========================");
 
   return nodemailer.createTransport({
     jsonTransport: true,

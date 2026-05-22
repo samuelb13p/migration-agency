@@ -155,6 +155,7 @@ export const casesService = {
         action: "customer.access_email.failed",
         entityType: "VisaCase",
         entityId: created.visaCase.id,
+        error: error,
         metadata: { message: error instanceof Error ? error.message : "Unknown email error." },
       });
       
