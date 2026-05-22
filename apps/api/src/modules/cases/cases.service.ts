@@ -140,7 +140,7 @@ export const casesService = {
     let emailSent = true;
 
     try {
-      await emailService.sendCustomerAccessEmail({
+      await emailService.sendExternalCustomerAccessEmail({
         email: normalizedEmail,
         password: normalizedPassportNumber,
         firstName: input.customer.firstName.trim(),

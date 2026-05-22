@@ -11,6 +11,7 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
   APP_URL: z.string().url().default("http://localhost:3000"),
   API_URL: z.string().url().default("http://localhost:4000"),
+  EMAIL_SERVICE_API_URL: z.string().url().default("http://localhost:5000"),
   AGENCY_NAME: z.string().default("Migration Agency"),
   STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
   LOCAL_STORAGE_ROOT: z.string().default("./storage/private"),
